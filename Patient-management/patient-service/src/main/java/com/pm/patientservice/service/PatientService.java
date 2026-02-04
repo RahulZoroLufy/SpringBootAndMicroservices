@@ -25,43 +25,33 @@ public class PatientService {
         this.patientRepository = patientRepository;
     }
 
-   public List<PatientResponseDto> getPatients(){
+    public List<PatientResponseDto> getPatients() {
         List<Patient> patientList = patientRepository.findAll();
-       return patientList.stream().map(PatientMapper::toPatientResponseDto).toList();
-   }
+        return patientList.stream().map(PatientMapper::toPatientResponseDto).toList();
+    }
 
-   public PatientResponseDto createpatient(PatientRequestDto patientRequestDto){
-        if(patientRepository.existsByEmail(patientRequestDto.getEmail())){
-            throw new EmailAlreadyExistsException("patient with this email alreay exists"+ patientRequestDto.getEmail());
+    public PatientResponseDto createpatient(PatientRequestDto patientRequestDto) {
+        if (patientRepository.existsByEmail(patientRequestDto.getEmail())) {
+            throw new EmailAlreadyExistsException("patient with this email alreay exists" + patientRequestDto.getEmail());
         }
         Patient newpatient = patientRepository.save(PatientMapper.toPatient(patientRequestDto));
         return new PatientMapper().toPatientResponseDto(newpatient);
-   }
+    }
 
-   public PatientResponseDto updatepatient(UUID id , PatientRequestDto patientRequestDto){
-        if(patientRepository.existsById(id)){
-            Patient patient = patientRepository.findById(id).orElseThrow(()-> new PatientNotFouncdException("Patient does not exits for the given "+id));
-            Patient updatepatient;
-            if(patientRequestDto.getEmail().equals(patient.getEmail())){
-                patient.setName(patientRequestDto.getName());
-                patient.setAddress(patientRequestDto.getAddress());
-                patient.setDateOfBirth(LocalDate.parse(patientRequestDto.getDateOfBirth()));
-                updatepatient =  patientRepository.save(patient);
-            }
-            else{
-                if(patientRepository.existsByEmail(patientRequestDto.getEmail())){
-                    throw new EmailAlreadyExistsException("patient with this email alreay exists"+ patientRequestDto.getEmail());
-                }
-                patient.setName(patientRequestDto.getName());
-                patient.setAddress(patientRequestDto.getAddress());
-                patient.setDateOfBirth(LocalDate.parse(patientRequestDto.getDateOfBirth()));
-                patient.setEmail(patientRequestDto.getEmail());
-                updatepatient =  patientRepository.save(patient);
-            }
+    public PatientResponseDto updatepatient(UUID id, PatientRequestDto patientRequestDto) {
 
-            return new PatientMapper().toPatientResponseDto(updatepatient);
+        Patient patient = patientRepository.findById(id).orElseThrow(() -> new PatientNotFouncdException("Patient does not exits for the given " + id));
+
+        if (patientRepository.existsByEmailAndIdNot(patientRequestDto.getEmail(), id)) {
+            throw new EmailAlreadyExistsException("patient with this email alreay exists" + patientRequestDto.getEmail());
         }
-       return null;
-   }
+        patient.setName(patientRequestDto.getName());
+        patient.setAddress(patientRequestDto.getAddress());
+        patient.setDateOfBirth(LocalDate.parse(patientRequestDto.getDateOfBirth()));
+        Patient updatepatient = patientRepository.save(patient);
+
+        return new PatientMapper().toPatientResponseDto(updatepatient);
+
+    }
 
 }
